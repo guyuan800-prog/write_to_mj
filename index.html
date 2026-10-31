@@ -59,7 +59,7 @@ body{min-height:100vh;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-b
 .card p{margin:0;font-size:calc(13px*var(--fz,1));color:var(--sub)}
 
 /* 面板 */
-.panel{position:fixed;inset:0;background:var(--page) fixed;z-index:10;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0)}
+.panel{position:fixed;inset:0;background:transparent;z-index:10;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0)}
 .panel.open{display:flex;animation:up .2s ease-out}
 @keyframes up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.panel.open{animation:none}}
@@ -215,7 +215,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
 <button class="bgbtn" id="bgbtn" aria-label="美化与背景">☆</button>
 <div class="sheet" id="msheet"><div class="sheet-in">
 <div class="mtitle">格式设置</div>
-<div class="lab">写给谁（名字）</div><input class="nameinp" id="mname" placeholder="mj" maxlength="12">
+<div class="lab">写给谁（名字）</div><input class="nameinp" id="mname" placeholder="ta" maxlength="12">
 <div class="lab">默认称呼（{n} 会换成名字，每封信里还能单独改）</div><input class="nameinp" id="mgt" placeholder="亲爱的 {n}：" maxlength="30">
 <div class="lab">默认落款前缀</div><input class="nameinp" id="msp" placeholder="你的" maxlength="10">
 <div class="lab">信纸颜色</div><div class="opts" id="m-pc"></div>
@@ -287,11 +287,34 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
 <script>
 (function(){
   var KEY='mj-home-v1';
-  var state={diary:[],letters:[],figure:'',bg:null,sign:'',tx:null,name:'',lf:null,gt:null,spd:null};
+  var state={
+    diary:[],letters:[],figure:'',bg:null,sign:'',tx:null,name:'',
+    lf_diary:null, lf_letters:null, // 独立配置
+    gt:null, spd:null
+  };
   var mem=null;
-  var pendingPimg = null; // 临时存放刚上传、尚未应用的信纸背景图
+  var pendingPimg = null; 
+
   function load(){
-    try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);state.diary=o.diary||[];state.letters=o.letters||[];state.figure=o.figure||'';state.bg=o.bg||null;state.sign=o.sign||'';state.tx=o.tx||null;state.name=o.name||'';state.lf=o.lf||null;state.gt=o.gt==null?null:o.gt;state.spd=o.spd==null?null:o.spd;return}}catch(e){}
+    try{
+      var r=localStorage.getItem(KEY);
+      if(r){
+        var o=JSON.parse(r);
+        state.diary=o.diary||[];
+        state.letters=o.letters||[];
+        state.figure=o.figure||'';
+        state.bg=o.bg||null;
+        state.sign=o.sign||'';
+        state.tx=o.tx||null;
+        state.name=o.name||'';
+        // 兼容旧数据
+        state.lf_diary = o.lf_diary || o.lf || null;
+        state.lf_letters = o.lf_letters || o.lf || null;
+        state.gt=o.gt==null?null:o.gt;
+        state.spd=o.spd==null?null:o.spd;
+        return;
+      }
+    }catch(e){}
     if(mem)state=mem;
   }
   function save(){
@@ -362,6 +385,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
     cur=type;editing=null;
     $('pmenu').hidden=false;
     $('panel').classList.add('open');
+    document.querySelector('.app').style.visibility = 'hidden';
     $('ptitle').textContent=CFG[type].name;
     $('back').textContent='返回';
     $('act').textContent=type==='diary'?'新建':'写信';
@@ -391,8 +415,9 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
     var type=cur,e=id?state[type].filter(function(x){return x.id===id})[0]:null;
     var isNew=!e;
     if(isNew){
-      var n=new Date();e={id:'e'+n.getTime(),ts:n.getTime(),date:ymd(n),title:'',text:''};
-      var F0=LF();e.pc=F0.pc;e.pt=F0.pt;
+      var n=new Date();
+      e={id:'e'+n.getTime(),ts:n.getTime(),date:ymd(n),title:'',text:''};
+      // 移除默认将全局信纸配置绑定到新信上，让新信实时从全局配置读取，方便即时更新
     }
     editing={entry:e,isNew:isNew};
     $('ptitle').textContent=type==='diary'?'写日记':'给 '+N()+' 的信';
@@ -404,7 +429,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
   }
   function renderEditor(focus){
     var type=cur,e=editing.entry,L=type==='letters',F=LF();
-    var pc=e.pc==null?F.pc:e.pc,pt=e.pt==null?F.pt:e.pt;
+    var pc=e.pc==null?F.pc:e.pc, pt=e.pt==null?F.pt:e.pt;
     var B=BRS[F.b][1],D=DCS[F.dc][1],AL=ALS[F.al][1];
     var isCustom = !!(F.pimg || F.pcustom);
     var cls = 'editor letter';
@@ -425,7 +450,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
       (D?'<div class="deco">'+D+'</div>':'')+
       (L?'<input class="greet" id="eg" placeholder="称呼，如：亲爱的 '+esc(N())+'：" maxlength="30">':'')+
       '<textarea id="ex"'+(AL!=='left'?' style="text-align:'+AL+'"':'')+' placeholder="'+(type==='diary'?'今天发生了什么……':'想对你说的话……')+'"></textarea>'+
-      (L?'<div class="signrow"><input class="spi" id="esp" placeholder="前缀" maxlength="10"><input id="es" placeholder="落款" maxlength="12"></div>'+(F.p?'<div class="psrow"><span>P.S.</span><input id="ep" placeholder="附言（可不写）" maxlength="80"></div>':'')+(F.d?'<div class="sdate">'+fmt(e.ts)+'</div>':'')+
+      (L?'<div class="signrow"><input class="spi" id="esp" placeholder="前缀" maxlength="10"><input id="es" placeholder="落款" maxlength="12"></div>'+(F.p?'<div class="psrow"><span>附言</span><input id="ep" placeholder="附言内容（可不写）" maxlength="80"></div>':'')+(F.d?'<div class="sdate">'+fmt(e.ts)+'</div>':'')+
         '<div class="tools"><span class="cnt" id="cnt"></span><button class="tb" id="cp">复制</button></div>':'')+
       '</div>';
     // 背景图与蒙版用 DOM 属性设置
@@ -453,7 +478,13 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
     var e=editing.entry;
     e.title=$('et').value.trim();
     e.text=$('ex').value;
-    if(cur==='letters'){e.greet=$('eg').value.trim();e.sp=$('esp').value.trim();e.sign=$('es').value.trim();if(e.sign)state.sign=e.sign;if($('ep'))e.ps=$('ep').value.trim()}
+    if(cur==='letters'){
+      e.greet=$('eg').value.trim();
+      e.sp=$('esp').value.trim();
+      e.sign=$('es').value.trim();
+      if(e.sign)state.sign=e.sign;
+      if($('ep'))e.ps=$('ep').value.trim();
+    }
     if(!e.title&&!e.text.trim()){
       if(!editing.isNew)state[cur]=state[cur].filter(function(x){return x.id!==e.id});
     }else{
@@ -464,7 +495,11 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
   }
   $('back').onclick=function(){
     if(editing){commit();openList(cur)}
-    else{$('panel').classList.remove('open');cur=null}
+    else{
+      $('panel').classList.remove('open');
+      document.querySelector('.app').style.visibility = '';
+      cur=null;
+    }
   };
   $('act').onclick=function(){
     if(!cur)return;
@@ -478,7 +513,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
   };
   function copyLetter(){
     var e=editing.entry,F=LF(),G=$('eg').value.trim(),sp=$('esp').value.trim(),sg=$('es').value.trim(),ps=$('ep')?$('ep').value.trim():'';
-    var s=(G?G+'\n\n':'')+$('ex').value.trim()+'\n\n'+(sg?(sp?sp+' ':'—— ')+sg+'\n':'')+(ps?'P.S. '+ps+'\n':'')+(F.d?fmt(e.ts):'');
+    var s=(G?G+'\n\n':'')+$('ex').value.trim()+'\n\n'+(sg?(sp?sp+' ':'—— ')+sg+'\n':'')+(ps?'附言：'+ps+'\n':'')+(F.d?fmt(e.ts):'');
     function fb(){var t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();try{document.execCommand('copy');toast('已复制，可以发给 '+N()+' 了')}catch(x){toast('复制失败，请手动选取')}t.remove()}
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(s).then(function(){toast('已复制，可以发给 '+N()+' 了')},fb)}else fb();
   }
@@ -505,7 +540,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
     h.setAttribute('data-theme','light');
     h.classList.add('custombg');
     if(b.t==='img'){
-      h.style.removeProperty('--page');
+      h.style.setProperty('--page', 'transparent');
       pbg.hidden=false;
       pbg.style.backgroundImage='url("'+b.v+'")';
       pbg.style.filter='blur('+(b.blur||0)+'px)';
@@ -536,7 +571,6 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
     }).join('');
     renderBgFx();
   }
-  // 页面背景图：实时调节
   $('bgblur').oninput=function(){
     if(!state.bg||state.bg.t!=='img')return;
     state.bg.blur=+this.value;
@@ -659,7 +693,19 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
   };
 
   function N(){return state.name||'mj'}
-  function LF(){var l=state.lf||{};return{al:l.al||0,b:l.b||0,dc:l.dc||0,d:l.d==null?1:l.d,p:l.p||0,pc:l.pc||0,pt:l.pt||0,pcustom:l.pcustom||null,pimg:l.pimg||null,pblur:l.pblur||0,pmask:l.pmask||0,pmaskColor:l.pmaskColor||'#ffffff'}}
+  // 独立读取当前的格式配置
+  function LF(){
+    var l = (cur === 'letters' ? state.lf_letters : state.lf_diary) || {};
+    return {
+      al:l.al||0, b:l.b||0, dc:l.dc||0, d:l.d==null?1:l.d, p:l.p||0, 
+      pc:l.pc||0, pt:l.pt||0, pcustom:l.pcustom||null, pimg:l.pimg||null,
+      pblur:l.pblur||0, pmask:l.pmask||0, pmaskColor:l.pmaskColor||'#ffffff'
+    }
+  }
+  function setLF(F){
+    if(cur === 'letters') state.lf_letters = F;
+    else state.lf_diary = F;
+  }
   var ALS=[['左','left'],['居中','center'],['右','right']];
   var BRS=[['无',''],['细线','1.5px solid #d9cfc0'],['虚线','2px dashed #d9c9b4'],['双线','4px double #cdbfa9']];
   var DCS=[['无',''],['✉','✉'],['❀','❀ ❀ ❀'],['♡','♡ ♡ ♡'],['☆','☆ ☆ ☆']];
@@ -680,156 +726,129 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
   function renderMenu(){
     var F=LF();
     function g(id,k,arr){$(id).innerHTML=arr.map(function(x,i){return '<button class="of'+(i===F[k]?' on':'')+'" data-k="'+k+'" data-i="'+i+'">'+x[0]+'</button>'}).join('')}
-    g('m-pt','pt',PTS);g('m-al','al',ALS);g('m-b','b',BRS);g('m-dc','dc',DCS);
-    var hasCustom = !!(F.pcustom || F.pimg);
-    $('m-pc').innerHTML=PCS.map(function(x,i){return '<button class="of dot'+(i===F.pc && !hasCustom?' on':'')+'" data-k="pc" data-i="'+i+'" aria-label="'+x[1]+'" title="'+x[1]+'" style="background:'+x[2]+'"></button>'}).join('');
-    $('m-t').innerHTML='<button class="of'+(F.d?' on':'')+'" data-k="d" data-i="'+(F.d?0:1)+'">显示日期</button><button class="of'+(F.p?' on':'')+'" data-k="p" data-i="'+(F.p?0:1)+'">附言 P.S.</button>';
-    $('mname').value=state.name||'';
-    $('mgt').value=state.gt==null?'亲爱的 {n}：':state.gt;
-    $('msp').value=defSP();
-    // 自定义颜色
-    if(F.pcustom)$('m-pcustom').value=F.pcustom;
-    // 背景图预览（优先显示待应用的 pendingPimg）
-    var prev=$('m-pimg-preview');
-    var showImg = pendingPimg || F.pimg;
-    if(showImg){
-      prev.style.backgroundImage='url("'+showImg+'")';
-      prev.classList.add('has');
-      prev.textContent= pendingPimg ? '（待应用）' : '';
-    }else{
-      prev.style.backgroundImage='';
-      prev.classList.remove('has');
-      prev.textContent='未设置背景图';
-    }
-    // 清晰度 / 蒙版 / 蒙版颜色
-    var fx=$('m-pimg-fx');
+    g('m-pt','pt',PTS);
+    g('m-al','al',ALS);
+    g('m-b','b',BRS);
+    g('m-dc','dc',DCS);
+    g('m-pc','pc',PCS);
+    
+    $('m-t').innerHTML = '<button class="of'+(F.p?' on':'')+'" data-k="p" data-i="'+(F.p?0:1)+'">显示附言</button>' + '<button class="of'+(F.d?' on':'')+'" data-k="d" data-i="'+(F.d?0:1)+'">显示日期</button>';
+    
+    $('mname').value = state.name || '';
+    $('mgt').value = state.gt == null ? '亲爱的 {n}：' : state.gt;
+    $('msp').value = state.spd == null ? '你的' : state.spd;
+
+    $('m-pimg-fx').hidden = !F.pimg;
     if(F.pimg){
-      fx.hidden=false;
-      var bl=F.pblur||0,mk=Math.round((F.pmask||0)*100);
-      $('m-pblur').value=bl;$('m-pblur-v').textContent=bl+'px';
-      $('m-pmask').value=mk;$('m-pmask-v').textContent=mk+'%';
-      var mc=F.pmaskColor||'#ffffff';
-      $('m-pmask-c').innerHTML=maskColorHTML(mc);
-      $('m-pmask-color').value=mc;
-    }else{
-      fx.hidden=true;
+      $('m-pblur').value = F.pblur||0; $('m-pblur-v').textContent = (F.pblur||0)+'px';
+      $('m-pmask').value = Math.round((F.pmask||0)*100); $('m-pmask-v').textContent = Math.round((F.pmask||0)*100)+'%';
+      $('m-pmask-c').innerHTML = maskColorHTML(F.pmaskColor);
+      $('m-pmask-color').value = F.pmaskColor;
+      $('m-pimg-preview').className = 'img-preview has';
+      $('m-pimg-preview').style.backgroundImage = 'url("'+F.pimg+'")';
+      $('m-pimg-preview').textContent = '';
+    } else {
+      $('m-pimg-preview').className = 'img-preview';
+      $('m-pimg-preview').style.backgroundImage = '';
+      $('m-pimg-preview').textContent = '未设置背景图';
     }
   }
-  function redraw(){if(editing)renderEditor(false)}
-  $('pmenu').onclick=function(){renderMenu();$('msheet').classList.add('open')};
-  $('msheet').onclick=function(ev){
-    if(ev.target===$('msheet')){$('msheet').classList.remove('open');return}
-    var o=ev.target.closest('.of');if(!o)return;
-    // 排除蒙版颜色按钮（它们有 data-mc，不是 data-k）
-    if(o.dataset.mc)return;
-    snap();
-    var k=o.dataset.k,v=+o.dataset.i,f=LF();
-    f[k]=v;
-    // 选预设颜色时清除自定义
-    if(k==='pc'){f.pcustom=null;f.pimg=null;pendingPimg=null}
-    state.lf=f;
-    if(editing&&(k==='pc'||k==='pt'))editing.entry[k]=v;
-    save();renderMenu();redraw();
-  };
-  $('mname').oninput=function(){snap();state.name=this.value.trim();save();applyName();redraw()};
-  $('mgt').oninput=function(){snap();state.gt=this.value;save();redraw()};
-  $('msp').oninput=function(){snap();state.spd=this.value;save();redraw()};
-  $('mreset').onclick=function(){snap();state.lf=null;pendingPimg=null;save();renderMenu();redraw()};
 
-  // 自定义颜色
-  $('m-pcustom-apply').onclick=function(){
-    snap();
-    var f=LF();
-    f.pcustom=$('m-pcustom').value;
-    f.pimg=null;
-    pendingPimg=null;
-    state.lf=f;
-    save();renderMenu();redraw();
-    toast('已应用自定义颜色');
+  $('pmenu').onclick = function(){
+    renderMenu();
+    $('msheet').classList.add('open');
   };
-  $('m-pcustom-clear').onclick=function(){
-    snap();
-    var f=LF();
-    f.pcustom=null;
-    state.lf=f;
-    save();renderMenu();redraw();
-  };
+  $('msheet').onclick = function(ev){
+    if(ev.target === $('msheet')){ $('msheet').classList.remove('open'); return; }
+    var o = ev.target.closest('.of');
+    if(o && o.dataset.k){
+      var k = o.dataset.k, v = +o.dataset.i;
+      var F = LF();
+      F[k] = v;
+      setLF(F);
+      
+      // 实时同步到正在编辑的信，避免格式不更新
+      if (editing) {
+        if (k === 'pc') editing.entry.pc = v;
+        if (k === 'pt') editing.entry.pt = v;
+      }
 
-  // 信纸背景图
-  $('m-pimg-up').onclick=function(){$('pimgfile').click()};
-  $('m-pimg-apply').onclick=function(){
-    if(!pendingPimg){
-      toast('请先上传一张图片');
-      return;
+      save(); renderMenu();
+      if(editing) renderEditor(false);
     }
-    snap();
-    var f=LF();
-    f.pimg=pendingPimg;
-    f.pcustom=null;
-    state.lf=f;
-    pendingPimg=null;
-    save();renderMenu();redraw();
-    toast('已应用信纸背景图');
   };
-  $('m-pimg-clear').onclick=function(){
-    snap();
-    var f=LF();
-    f.pimg=null;
-    state.lf=f;
-    pendingPimg=null;
-    save();renderMenu();redraw();
-    toast('已清除背景图');
+  
+  $('mname').onchange = function(){ state.name = this.value.trim(); save(); applyName(); if(editing) $('ptitle').textContent=cur==='diary'?'写日记':'给 '+N()+' 的信'; };
+  $('mgt').onchange = function(){ state.gt = this.value.trim(); save(); };
+  $('msp').onchange = function(){ state.spd = this.value.trim(); save(); };
+
+  $('mreset').onclick = function(){
+    setLF(null); save(); renderMenu(); if(editing) renderEditor(false); toast('已恢复默认');
   };
-  $('pimgfile').onchange=function(e){
-    var f=e.target.files[0];if(!f)return;
-    var r=new FileReader();
-    r.onload=function(){
-      var img=new Image();
-      img.onload=function(){
-        var M=1200,s=Math.min(1,M/Math.max(img.width,img.height));
-        var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+
+  $('m-pcustom-apply').onclick = function(){
+    var F = LF(); F.pcustom = $('m-pcustom').value; F.pimg = null;
+    setLF(F); save(); renderMenu(); if(editing) renderEditor(false); toast('已应用自定义信纸颜色');
+  };
+  $('m-pcustom-clear').onclick = function(){
+    var F = LF(); F.pcustom = null;
+    setLF(F); save(); renderMenu(); if(editing) renderEditor(false);
+  };
+
+  $('m-pimg-up').onclick = function(){ $('pimgfile').click(); };
+  $('pimgfile').onchange = function(e){
+    var f = e.target.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      var img = new Image();
+      img.onload = function(){
+        var M = 1200, s = Math.min(1, M/Math.max(img.width,img.height));
+        var c = document.createElement('canvas'); c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
         c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-        var data=c.toDataURL('image/jpeg',.75);
-        pendingPimg=data;
-        // 只更新预览，不立刻写入 state
-        var prev=$('m-pimg-preview');
-        prev.style.backgroundImage='url("'+data+'")';
-        prev.classList.add('has');
-        prev.textContent='';
-        toast('已选中，请点击「应用背景图」');
+        pendingPimg = c.toDataURL('image/jpeg', .8);
+        var F = LF(); F.pimg = pendingPimg; F.pcustom = null;
+        setLF(F); save(); renderMenu(); if(editing) renderEditor(false); toast('已应用背景图');
       };
-      img.src=r.result;
+      img.src = r.result;
     };
-    r.readAsDataURL(f);e.target.value='';
+    r.readAsDataURL(f); e.target.value = '';
+  };
+  $('m-pimg-apply').onclick = function(){
+    if(!pendingPimg) { toast('请先上传背景图'); return; }
+    var F = LF(); F.pimg = pendingPimg; F.pcustom = null;
+    setLF(F); save(); renderMenu(); if(editing) renderEditor(false); toast('已应用背景图');
+  };
+  $('m-pimg-clear').onclick = function(){
+    var F = LF(); F.pimg = null; pendingPimg = null;
+    setLF(F); save(); renderMenu(); if(editing) renderEditor(false); toast('已清除背景图');
   };
 
-  // 信纸背景图：实时调节
-  $('m-pblur').oninput=function(){
-    var f=LF();f.pblur=+this.value;state.lf=f;
-    $('m-pblur-v').textContent=this.value+'px';
+  $('m-pblur').oninput = function(){
+    var F = LF(); F.pblur = +this.value; setLF(F); save();
+    $('m-pblur-v').textContent = this.value + 'px';
     updatePimgFx();
   };
-  $('m-pblur').onchange=function(){save()};
-  $('m-pmask').oninput=function(){
-    var f=LF();f.pmask=+this.value/100;state.lf=f;
-    $('m-pmask-v').textContent=this.value+'%';
+  $('m-pmask').oninput = function(){
+    var F = LF(); F.pmask = +this.value/100; setLF(F); save();
+    $('m-pmask-v').textContent = this.value + '%';
     updatePimgFx();
   };
-  $('m-pmask').onchange=function(){save()};
-  $('m-pmask-c').onclick=function(ev){
-    var o=ev.target.closest('[data-mc]');if(!o)return;
-    snap();
-    var f=LF();f.pmaskColor=o.dataset.mc;state.lf=f;
-    save();renderMenu();updatePimgFx();
+  $('m-pmask-c').onclick = function(ev){
+    var o = ev.target.closest('[data-mc]'); if(!o) return;
+    var F = LF(); F.pmaskColor = o.dataset.mc; setLF(F); save(); renderMenu(); updatePimgFx();
   };
-  $('m-pmask-color-apply').onclick=function(){
-    snap();
-    var f=LF();f.pmaskColor=$('m-pmask-color').value;state.lf=f;
-    save();renderMenu();updatePimgFx();
-    toast('已应用蒙版颜色');
+  $('m-pmask-color-apply').onclick = function(){
+    var F = LF(); F.pmaskColor = $('m-pmask-color').value; setLF(F); save(); renderMenu(); updatePimgFx();
   };
 
-  load();applyBg();applyTx();applyName();showFig();stats();
+  // 初始化
+  load();
+  showFig();
+  stats();
+  applyBg();
+  applyTx();
+  renderMenu();
+  applyName();
 })();
 </script>
 </body>
