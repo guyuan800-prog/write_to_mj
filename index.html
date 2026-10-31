@@ -31,6 +31,10 @@ html{background:var(--page) fixed;min-height:100%}
 body{min-height:100vh;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 .app{max-width:420px;margin:0 auto;padding:48px 22px 48px}
 
+/* 页面背景图层（支持模糊 + 蒙版） */
+#pagebg{position:fixed;inset:-40px;z-index:-2;background-position:center;background-size:cover;background-repeat:no-repeat;pointer-events:none}
+#pagemask{position:fixed;inset:0;z-index:-1;pointer-events:none}
+
 /* 头像 */
 .stage{display:flex;justify-content:center;margin:0 0 36px}
 .avatar{width:148px;height:148px;border-radius:50%;background:var(--card);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;position:relative;padding:0;border:4px solid #fff}
@@ -76,7 +80,7 @@ body{min-height:100vh;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-b
 .item .d{font-size:calc(12px*var(--fz,1));color:var(--faint);margin-top:6px}
 .empty{text-align:center;color:var(--sub);padding:100px 24px;line-height:1.8;font-size:calc(14px*var(--fz,1))}
 .editor{display:flex;flex-direction:column;min-height:100%;background:var(--card);box-shadow:var(--shadow);padding:22px 20px 24px;border-radius:16px}
-.editor input{border:0;background:none;font-size:calc(20px*var(--fz,1));font-weight:700;color:var(--ink);padding:2px 0 6px;outline:none;width:100%}
+.editor input{border:0;background:none;font-size:calc(20px*var(--fz,1));font-weight:700;color:var(--tc,var(--ink));padding:2px 0 6px;outline:none;width:100%}
 .editor .meta{font-size:calc(13px*var(--fz,1));color:var(--faint);padding:0 0 12px;border-bottom:1px solid var(--line);margin-bottom:10px}
 .editor textarea{flex:1;min-height:50vh;border:0;font:inherit;font-size:calc(16px*var(--fz,1));line-height:1.75;color:var(--ink);resize:none;outline:none;padding:0;width:100%;background:transparent}
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:99px;font-size:calc(13px*var(--fz,1));z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -111,24 +115,61 @@ body{min-height:100vh;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-b
 .item .t,.item .p{font-family:var(--tf,inherit)}
 html,body{font-weight:var(--tw,400);font-style:var(--ti,normal);letter-spacing:var(--tls,0)}
 input,textarea,button{letter-spacing:inherit;font-style:inherit}
-/* 信纸 */
+/* 菜单 / 信的格式 */
+.mtitle{text-align:center;font-weight:600;font-size:calc(16px*var(--fz,1))}
+.nameinp{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:calc(16px*var(--fz,1));padding:10px 14px;border-radius:14px;outline:none}
+.editor .deco{text-align:center;color:var(--faint);letter-spacing:.3em;padding:2px 0 6px;font-size:calc(16px*var(--fz,1))}
+.sdate{text-align:right;font-size:calc(12px*var(--fz,1));color:var(--faint);margin-top:8px}
+.psrow{display:flex;gap:8px;align-items:center;margin-top:14px;color:var(--sub);font-size:calc(14px*var(--fz,1))}
+.editor .psrow input{flex:1;font-size:calc(14px*var(--fz,1));font-weight:400;border-bottom:1px solid var(--line);padding:2px 0}
+/* 信纸：颜色 + 纹路 */
+.bl,.br{flex:1;display:flex;gap:8px;align-items:center}.br{justify-content:flex-end}
+.tb.mn{min-width:0;padding:7px 13px}
+.editor.letter{background-color:var(--pbg,var(--card));--pl:#e3ddd3;position:relative;overflow:hidden}
+.c-cream{--pbg:#fff7e8}.c-pink{--pbg:#fdeff0}.c-blue{--pbg:#edf3fb}.c-mint{--pbg:#eaf5ee}.c-lav{--pbg:#f1ecf8}.c-kraft{--pbg:#efe2cc}.c-gray{--pbg:#f1f0ee}
+.editor.letter:not(.c-white):not(.c-night):not(.c-custom){--ink:#2a2623;--sub:#8a8078;--faint:#b9afa4;--line:#eadfce}
+.editor.c-night{--pbg:#2b2a33;--ink:#f0ece8;--sub:#a29d97;--faint:#77727a;--line:#46434d;--pl:#46434d}
+.editor.c-custom{--ink:#2a2623;--sub:#8a8078;--faint:#b9afa4;--line:#eadfce}
+.editor.letter.has-pimg{background-color:transparent}
+/* 信纸背景图层（支持模糊 + 蒙版） */
+.editor .pbg{position:absolute;inset:-40px;z-index:0;background-position:center;background-size:cover;background-repeat:no-repeat;pointer-events:none}
+.editor .pmask{position:absolute;inset:0;z-index:0;pointer-events:none}
+.editor > *:not(.pbg):not(.pmask){position:relative;z-index:1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .editor.c-white{--pl:#4a4642}}
+.editor.t-lines textarea{background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--tl) - 1px),var(--pl) calc(var(--tl) - 1px),var(--pl) var(--tl)) local}
+.editor.t-dots textarea{background:radial-gradient(circle,var(--pl) 1.3px,transparent 1.7px) 0 0/var(--tl) var(--tl) local}
+.editor.t-grid textarea{background:linear-gradient(var(--pl) 1px,transparent 1px) 0 0/var(--tl) var(--tl) local,linear-gradient(90deg,var(--pl) 1px,transparent 1px) 0 0/var(--tl) var(--tl) local}
+.editor input.greet{font-size:calc(16px*var(--fz,1));font-weight:600;padding:6px 0 4px;color:var(--tc,var(--ink))}
+.editor .signrow input.spi{width:84px}
+.tools .cnt{flex:1}
 .editor .greet{font-size:calc(16px*var(--fz,1));font-weight:600;padding:6px 0 4px}
 .editor.letter textarea{min-height:40vh}
-.editor.p-lines{background:#fffdf8}
-.editor.p-lines textarea{background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--tl) - 1px),#e8e1d6 calc(var(--tl) - 1px),#e8e1d6 var(--tl)) local}
-.editor.p-warm{background:#fff7e8}.editor.p-pink{background:#fdeff0}.editor.p-blue{background:#edf3fb}
-.editor[class*=" p-"]:not(.p-plain){--ink:#2a2623;--sub:#8a8078;--faint:#b9afa4;--line:#eadfce}
 .signrow{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:14px;font-size:calc(15px*var(--fz,1));color:var(--sub)}
 .editor .signrow input{width:120px;font-size:calc(15px*var(--fz,1));font-weight:400;border-bottom:1px solid var(--line);padding:2px 0;text-align:center}
 .tools{display:flex;align-items:center;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
-.papers{display:flex;gap:8px;flex:1}
-.pp{width:28px;height:28px;border-radius:50%;border:1px solid #ddd5c8;cursor:pointer;padding:0}
-.pp.on{outline:2px solid var(--ink);outline-offset:2px}
 .tools .cnt{font-size:calc(12px*var(--fz,1));color:var(--faint)}
 .tools .tb{min-width:0;padding:7px 14px;font-size:calc(14px*var(--fz,1));background:var(--bg);box-shadow:none}
+/* 自定义颜色选择器美化 */
+.color-row{display:flex;align-items:center;gap:12px;margin-top:8px}
+.color-row input[type="color"]{width:42px;height:42px;border:none;padding:0;background:none;cursor:pointer;border-radius:10px;overflow:hidden}
+.color-row input[type="color"]::-webkit-color-swatch-wrapper{padding:0}
+.color-row input[type="color"]::-webkit-color-swatch{border:1px solid var(--line);border-radius:10px}
+.img-preview{width:100%;height:80px;border-radius:12px;background:var(--bg) center/cover no-repeat;border:1px solid var(--line);margin-top:8px;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:calc(13px*var(--fz,1))}
+.img-preview.has{border:none}
+/* 清晰度 / 蒙版 滑块 */
+.fxbox{margin-top:4px}
+.fxbox .lab{display:flex;justify-content:space-between;align-items:baseline;margin:12px 0 2px}
+.fxbox .val{color:var(--faint);font-size:calc(12px*var(--fz,1))}
+.rng{width:100%;height:4px;-webkit-appearance:none;appearance:none;background:var(--line);border-radius:99px;outline:none;margin:10px 0 2px;cursor:pointer;display:block}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--ink);border:2px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer}
+.rng::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--ink);border:2px solid var(--card);cursor:pointer}
+.of.dot.mc{border:1px solid var(--line)}
 </style>
 </head>
 <body>
+<div id="pagebg" aria-hidden="true" hidden></div>
+<div id="pagemask" aria-hidden="true" hidden></div>
+
 <main class="app">
   <div class="stage">
     <button class="avatar" id="figure" aria-label="上传或更换图片">
@@ -157,7 +198,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
       <div class="icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
       </div>
-      <h3>给 mj 的信</h3>
+      <h3 id="lt">给 mj 的信</h3>
       <p><span id="c2">0</span> 封</p>
     </button>
   </section>
@@ -165,16 +206,71 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
 
 <div class="panel" id="panel" role="dialog" aria-modal="true">
   <div class="bar">
-    <button class="tb" id="back">返回</button>
+    <div class="bl"><button class="tb" id="back">返回</button><button class="tb mn" id="pmenu" aria-label="格式设置">☰</button></div>
     <h2 id="ptitle"></h2>
-    <button class="tb" id="act"></button>
+    <div class="br"><button class="tb" id="act"></button></div>
   </div>
   <div class="body" id="pbody"></div>
 </div>
 <button class="bgbtn" id="bgbtn" aria-label="美化与背景">☆</button>
+<div class="sheet" id="msheet"><div class="sheet-in">
+<div class="mtitle">格式设置</div>
+<div class="lab">写给谁（名字）</div><input class="nameinp" id="mname" placeholder="mj" maxlength="12">
+<div class="lab">默认称呼（{n} 会换成名字，每封信里还能单独改）</div><input class="nameinp" id="mgt" placeholder="亲爱的 {n}：" maxlength="30">
+<div class="lab">默认落款前缀</div><input class="nameinp" id="msp" placeholder="你的" maxlength="10">
+<div class="lab">信纸颜色</div><div class="opts" id="m-pc"></div>
+<div class="lab">自定义信纸颜色</div>
+<div class="color-row">
+  <input type="color" id="m-pcustom" value="#fff7e8" title="选择自定义颜色">
+  <button class="tb" id="m-pcustom-apply" style="min-width:0;padding:7px 14px;background:var(--bg);box-shadow:none">应用自定义色</button>
+  <button class="tb" id="m-pcustom-clear" style="min-width:0;padding:7px 14px;background:var(--bg);box-shadow:none">清除</button>
+</div>
+<div class="lab">信纸背景图</div>
+<div class="srow">
+  <button class="tb" id="m-pimg-up" style="flex:1;background:var(--bg);box-shadow:none">上传背景图</button>
+  <button class="tb" id="m-pimg-apply" style="flex:1;background:var(--bg);box-shadow:none">应用背景图</button>
+</div>
+<div class="srow" style="margin-top:8px">
+  <button class="tb" id="m-pimg-clear" style="flex:1;background:var(--bg);box-shadow:none">清除背景图</button>
+</div>
+<div class="img-preview" id="m-pimg-preview">未设置背景图</div>
+<div class="fxbox" id="m-pimg-fx" hidden>
+  <div class="lab"><span>背景图模糊</span><span class="val" id="m-pblur-v">0px</span></div>
+  <input type="range" class="rng" id="m-pblur" min="0" max="12" step="1" value="0">
+  <div class="lab"><span>蒙版深浅</span><span class="val" id="m-pmask-v">0%</span></div>
+  <input type="range" class="rng" id="m-pmask" min="0" max="60" step="1" value="0">
+  <div class="lab">蒙版颜色</div>
+  <div class="opts" id="m-pmask-c"></div>
+  <div class="color-row">
+    <input type="color" id="m-pmask-color" value="#ffffff" title="自定义蒙版颜色">
+    <button class="tb" id="m-pmask-color-apply" style="min-width:0;padding:7px 14px;background:var(--bg);box-shadow:none">应用自定义色</button>
+  </div>
+</div>
+<div class="lab">信纸纹路</div><div class="opts" id="m-pt"></div>
+<div class="lab">正文对齐</div><div class="opts" id="m-al"></div>
+<div class="lab">信纸边框</div><div class="opts" id="m-b"></div>
+<div class="lab">顶部装饰</div><div class="opts" id="m-dc"></div>
+<div class="lab">更多</div><div class="opts" id="m-t"></div>
+<div class="srow" style="margin-top:16px"><button class="tb" id="mreset">恢复默认格式</button></div>
+</div></div>
 <div class="sheet" id="sheet"><div class="sheet-in">
 <div class="tabs"><button class="tab on" data-t="bg">更换背景</button><button class="tab" data-t="tx">文字美化</button></div>
-<div id="pbg"><div class="sws" id="sw"></div><div class="srow"><button class="tb" id="bgup">上传图片</button><button class="tb" id="bgreset">恢复默认</button></div></div>
+<div id="pbg">
+  <div class="sws" id="sw"></div>
+  <div class="fxbox" id="bgfx" hidden>
+    <div class="lab"><span>背景图模糊</span><span class="val" id="bgblur-v">0px</span></div>
+    <input type="range" class="rng" id="bgblur" min="0" max="12" step="1" value="0">
+    <div class="lab"><span>蒙版深浅</span><span class="val" id="bgmask-v">0%</span></div>
+    <input type="range" class="rng" id="bgmask" min="0" max="60" step="1" value="0">
+    <div class="lab">蒙版颜色</div>
+    <div class="opts" id="bgmask-c"></div>
+    <div class="color-row">
+      <input type="color" id="bgmask-color" value="#000000" title="自定义蒙版颜色">
+      <button class="tb" id="bgmask-color-apply" style="min-width:0;padding:7px 14px;background:var(--bg);box-shadow:none">应用自定义色</button>
+    </div>
+  </div>
+  <div class="srow"><button class="tb" id="bgup">上传图片</button><button class="tb" id="bgreset">恢复默认</button></div>
+</div>
 <div id="ptx" hidden>
 <div class="sample">今天也想对你说很多很多话 ☆</div>
 <div class="lab">字体</div><div class="opts" id="o-f"></div>
@@ -185,15 +281,17 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
 <div class="srow" style="margin-top:16px"><button class="tb" id="txreset">恢复默认</button></div>
 </div></div></div>
 <input type="file" id="bgfile" accept="image/*" hidden>
+<input type="file" id="pimgfile" accept="image/*" hidden>
 <div class="toast" id="toast"></div>
 
 <script>
 (function(){
   var KEY='mj-home-v1';
-  var state={diary:[],letters:[],figure:'',bg:null,sign:'',tx:null};
+  var state={diary:[],letters:[],figure:'',bg:null,sign:'',tx:null,name:'',lf:null,gt:null,spd:null};
   var mem=null;
+  var pendingPimg = null; // 临时存放刚上传、尚未应用的信纸背景图
   function load(){
-    try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);state.diary=o.diary||[];state.letters=o.letters||[];state.figure=o.figure||'';state.bg=o.bg||null;state.sign=o.sign||'';state.tx=o.tx||null;return}}catch(e){}
+    try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);state.diary=o.diary||[];state.letters=o.letters||[];state.figure=o.figure||'';state.bg=o.bg||null;state.sign=o.sign||'';state.tx=o.tx||null;state.name=o.name||'';state.lf=o.lf||null;state.gt=o.gt==null?null:o.gt;state.spd=o.spd==null?null:o.spd;return}}catch(e){}
     if(mem)state=mem;
   }
   function save(){
@@ -206,6 +304,19 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
   var MON_SHORT=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   function p2(n){return String(n).padStart(2,'0')}
   function ymd(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+
+  function hexToRgba(hex,a){
+    hex=(hex||'#000000').replace('#','');
+    if(hex.length===3)hex=hex.split('').map(function(c){return c+c}).join('');
+    var r=parseInt(hex.slice(0,2),16)||0,g=parseInt(hex.slice(2,4),16)||0,b=parseInt(hex.slice(4,6),16)||0;
+    return 'rgba('+r+','+g+','+b+','+(a||0)+')';
+  }
+  var MASK_COLORS=[['黑','#000000'],['白','#ffffff'],['米','#fff7e8'],['粉','#fdeff0'],['蓝','#edf3fb'],['灰','#888888']];
+  function maskColorHTML(cur){
+    return MASK_COLORS.map(function(x){
+      return '<button class="of dot mc'+(x[1].toLowerCase()===String(cur).toLowerCase()?' on':'')+'" data-mc="'+x[1]+'" title="'+x[0]+'" style="background:'+x[1]+'"></button>';
+    }).join('');
+  }
 
   function len(s){return (s||'').replace(/\s/g,'').length}
   function stats(){
@@ -249,6 +360,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
 
   function openList(type){
     cur=type;editing=null;
+    $('pmenu').hidden=false;
     $('panel').classList.add('open');
     $('ptitle').textContent=CFG[type].name;
     $('back').textContent='返回';
@@ -263,38 +375,85 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
     }).join('');
     b.scrollTop=0;
   }
+  function defG(){return (state.gt==null?'亲爱的 {n}：':state.gt).replace('{n}',N())}
+  function defSP(){return state.spd==null?'你的':state.spd}
+  function snap(){
+    if(!editing||!$('et'))return;
+    var e=editing.entry;e.title=$('et').value;e.text=$('ex').value;
+    if(cur==='letters'){
+      var g=$('eg').value,sp=$('esp').value;
+      if(g!==defG())e.greet=g;else delete e.greet;
+      if(sp!==defSP())e.sp=sp;else delete e.sp;
+      e.sign=$('es').value;if($('ep'))e.ps=$('ep').value;
+    }
+  }
   function openEditor(id){
     var type=cur,e=id?state[type].filter(function(x){return x.id===id})[0]:null;
     var isNew=!e;
-    if(isNew){var n=new Date();e={id:'e'+n.getTime(),ts:n.getTime(),date:ymd(n),title:'',text:''}}
+    if(isNew){
+      var n=new Date();e={id:'e'+n.getTime(),ts:n.getTime(),date:ymd(n),title:'',text:''};
+      var F0=LF();e.pc=F0.pc;e.pt=F0.pt;
+    }
     editing={entry:e,isNew:isNew};
-    $('ptitle').textContent=type==='diary'?'写日记':'给 mj 的信';
+    $('ptitle').textContent=type==='diary'?'写日记':'给 '+N()+' 的信';
     $('back').textContent='完成';
     $('act').textContent=isNew?'':'删除';
     $('act').className='tb danger';
-    var L=type==='letters',paper=e.paper||'plain';
-    $('pbody').innerHTML='<div class="editor p-'+paper+(L?' letter':'')+'" id="ed">'+
+    $('pmenu').hidden=false;
+    renderEditor(true);
+  }
+  function renderEditor(focus){
+    var type=cur,e=editing.entry,L=type==='letters',F=LF();
+    var pc=e.pc==null?F.pc:e.pc,pt=e.pt==null?F.pt:e.pt;
+    var B=BRS[F.b][1],D=DCS[F.dc][1],AL=ALS[F.al][1];
+    var isCustom = !!(F.pimg || F.pcustom);
+    var cls = 'editor letter';
+    if(isCustom){
+      cls += ' c-custom';
+    }else{
+      cls += ' c-'+PCS[pc][0];
+    }
+    cls += ' t-'+PTS[pt][0];
+    if(F.pimg) cls += ' has-pimg';
+    var style = '';
+    if(B) style += 'border:'+B+';';
+    if(!F.pimg && F.pcustom) style += '--pbg:'+F.pcustom+';';
+    var bgHtml = F.pimg ? '<div class="pbg" id="ed-pbg"></div><div class="pmask" id="ed-pmask"></div>' : '';
+    $('pbody').innerHTML='<div class="'+cls+'" id="ed"'+(style?' style="'+style+'"':'')+'>'+bgHtml+
       '<input id="et" placeholder="'+(type==='diary'?'日记标题（可不写）':'信的标题（可不写）')+'" maxlength="60">'+
       '<div class="meta">'+fmt(e.ts)+'</div>'+
-      (L?'<div class="greet">亲爱的 mj：</div>':'')+
-      '<textarea id="ex" placeholder="'+(type==='diary'?'今天发生了什么……':'想对你说的话……')+'"></textarea>'+
-      (L?'<div class="signrow"><span>你的</span><input id="es" placeholder="落款" maxlength="12"></div>'+
-        '<div class="tools"><div class="papers">'+PAPERS.map(function(p){return '<button class="pp'+(p[0]===paper?' on':'')+'" data-p="'+p[0]+'" style="background:'+p[1]+'" aria-label="信纸"></button>'}).join('')+'</div><span class="cnt" id="cnt"></span><button class="tb" id="cp">复制</button></div>':'')+
+      (D?'<div class="deco">'+D+'</div>':'')+
+      (L?'<input class="greet" id="eg" placeholder="称呼，如：亲爱的 '+esc(N())+'：" maxlength="30">':'')+
+      '<textarea id="ex"'+(AL!=='left'?' style="text-align:'+AL+'"':'')+' placeholder="'+(type==='diary'?'今天发生了什么……':'想对你说的话……')+'"></textarea>'+
+      (L?'<div class="signrow"><input class="spi" id="esp" placeholder="前缀" maxlength="10"><input id="es" placeholder="落款" maxlength="12"></div>'+(F.p?'<div class="psrow"><span>P.S.</span><input id="ep" placeholder="附言（可不写）" maxlength="80"></div>':'')+(F.d?'<div class="sdate">'+fmt(e.ts)+'</div>':'')+
+        '<div class="tools"><span class="cnt" id="cnt"></span><button class="tb" id="cp">复制</button></div>':'')+
       '</div>';
+    // 背景图与蒙版用 DOM 属性设置
+    if(F.pimg){
+      var pb=$('ed-pbg'),pm=$('ed-pmask');
+      if(pb){
+        pb.style.backgroundImage='url("'+F.pimg+'")';
+        pb.style.filter='blur('+(F.pblur||0)+'px)';
+      }
+      if(pm)pm.style.background=hexToRgba(F.pmaskColor||'#ffffff',F.pmask||0);
+    }
     $('et').value=e.title;$('ex').value=e.text;
     if(L){
-      $('es').value=e.sign||state.sign||'';
+      $('eg').value=e.greet!=null?e.greet:defG();
+      $('esp').value=e.sp!=null?e.sp:defSP();
+      $('es').value=e.sign!=null?e.sign:(state.sign||'');
+      if($('ep'))$('ep').value=e.ps||'';
       var upd=function(){$('cnt').textContent=len($('ex').value)+' 字'};
       $('ex').oninput=upd;upd();
     }
-    setTimeout(function(){$('ex').focus()},50);
+    if(focus)setTimeout(function(){$('ex').focus()},50);
   }
   function commit(){
     if(!editing)return;
     var e=editing.entry;
     e.title=$('et').value.trim();
     e.text=$('ex').value;
-    if(cur==='letters'){e.sign=$('es').value.trim();if(e.sign)state.sign=e.sign}
+    if(cur==='letters'){e.greet=$('eg').value.trim();e.sp=$('esp').value.trim();e.sign=$('es').value.trim();if(e.sign)state.sign=e.sign;if($('ep'))e.ps=$('ep').value.trim()}
     if(!e.title&&!e.text.trim()){
       if(!editing.isNew)state[cur]=state[cur].filter(function(x){return x.id!==e.id});
     }else{
@@ -318,34 +477,94 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
     }else openEditor(null);
   };
   function copyLetter(){
-    var e=editing.entry,sg=$('es').value.trim();
-    var s='亲爱的 mj：\n\n'+$('ex').value.trim()+'\n\n'+(sg?'—— '+sg+'\n':'')+fmt(e.ts);
-    function fb(){var t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();try{document.execCommand('copy');toast('已复制，可以发给 mj 了')}catch(x){toast('复制失败，请手动选取')}t.remove()}
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(s).then(function(){toast('已复制，可以发给 mj 了')},fb)}else fb();
+    var e=editing.entry,F=LF(),G=$('eg').value.trim(),sp=$('esp').value.trim(),sg=$('es').value.trim(),ps=$('ep')?$('ep').value.trim():'';
+    var s=(G?G+'\n\n':'')+$('ex').value.trim()+'\n\n'+(sg?(sp?sp+' ':'—— ')+sg+'\n':'')+(ps?'P.S. '+ps+'\n':'')+(F.d?fmt(e.ts):'');
+    function fb(){var t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();try{document.execCommand('copy');toast('已复制，可以发给 '+N()+' 了')}catch(x){toast('复制失败，请手动选取')}t.remove()}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(s).then(function(){toast('已复制，可以发给 '+N()+' 了')},fb)}else fb();
   }
   $('pbody').onclick=function(ev){
-    var pp=ev.target.closest('.pp');
-    if(pp&&editing){editing.entry.paper=pp.dataset.p;$('ed').className='editor p-'+pp.dataset.p+' letter';document.querySelectorAll('.pp').forEach(function(x){x.classList.toggle('on',x===pp)});return}
     if(ev.target.closest('#cp')&&editing){copyLetter();return}
     var it=ev.target.closest('.item');if(it&&!editing)openEditor(it.dataset.id);
   };
   document.querySelectorAll('[data-open]').forEach(function(b){b.onclick=function(){openList(b.dataset.open)}});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&$('panel').classList.contains('open'))$('back').click()});
 
-  var PAPERS=[['plain','#fff'],['lines','repeating-linear-gradient(#fffdf8 0,#fffdf8 6px,#e8e1d6 6px,#e8e1d6 7px)'],['warm','#fff7e8'],['pink','#fdeff0'],['blue','#edf3fb']];
   var PRESETS=[['默认',''],['奶油','#fbf3e4'],['浅粉','#fbeaec'],['雾蓝','#e8eff7'],['薄荷','#e7f1ea'],['薰衣草','#efe9f7'],['日落','linear-gradient(160deg,#ffe3d3,#f8c9d4)'],['晴空','linear-gradient(160deg,#dcecff,#f3e8ff)']];
+
   function applyBg(){
     var h=document.documentElement,b=state.bg;
-    if(!b){h.style.removeProperty('--page');h.removeAttribute('data-theme');h.classList.remove('custombg');return}
-    h.style.setProperty('--page',b.t==='img'?'url("'+b.v+'") center/cover no-repeat':b.v);
-    h.setAttribute('data-theme','light');h.classList.add('custombg');
+    var pbg=$('pagebg'),pm=$('pagemask');
+    if(!b){
+      h.style.removeProperty('--page');
+      h.removeAttribute('data-theme');
+      h.classList.remove('custombg');
+      pbg.hidden=true;pm.hidden=true;
+      pbg.style.backgroundImage='';
+      return;
+    }
+    h.setAttribute('data-theme','light');
+    h.classList.add('custombg');
+    if(b.t==='img'){
+      h.style.removeProperty('--page');
+      pbg.hidden=false;
+      pbg.style.backgroundImage='url("'+b.v+'")';
+      pbg.style.filter='blur('+(b.blur||0)+'px)';
+      pm.hidden=false;
+      pm.style.background=hexToRgba(b.maskColor||'#000000',b.mask||0);
+    }else{
+      h.style.setProperty('--page',b.v);
+      pbg.hidden=true;pm.hidden=true;
+      pbg.style.backgroundImage='';
+    }
+  }
+  function renderBgFx(){
+    var isImg=!!(state.bg&&state.bg.t==='img');
+    $('bgfx').hidden=!isImg;
+    if(isImg){
+      var bl=state.bg.blur||0,mk=Math.round((state.bg.mask||0)*100);
+      $('bgblur').value=bl;$('bgblur-v').textContent=bl+'px';
+      $('bgmask').value=mk;$('bgmask-v').textContent=mk+'%';
+      var mc=state.bg.maskColor||'#000000';
+      $('bgmask-c').innerHTML=maskColorHTML(mc);
+      $('bgmask-color').value=mc;
+    }
   }
   function renderSheet(){
     $('sw').innerHTML=PRESETS.map(function(p,i){
       var on=state.bg?(state.bg.t==='c'&&state.bg.v===p[1]):!p[1];
       return '<button class="sw'+(on?' on':'')+'" data-i="'+i+'" style="background:'+(p[1]||'var(--bg)')+'"><i>'+p[0]+'</i></button>';
     }).join('');
+    renderBgFx();
   }
+  // 页面背景图：实时调节
+  $('bgblur').oninput=function(){
+    if(!state.bg||state.bg.t!=='img')return;
+    state.bg.blur=+this.value;
+    $('bgblur-v').textContent=this.value+'px';
+    $('pagebg').style.filter='blur('+this.value+'px)';
+  };
+  $('bgblur').onchange=function(){save()};
+  $('bgmask').oninput=function(){
+    if(!state.bg||state.bg.t!=='img')return;
+    var v=+this.value/100;
+    state.bg.mask=v;
+    $('bgmask-v').textContent=this.value+'%';
+    $('pagemask').style.background=hexToRgba(state.bg.maskColor||'#000000',v);
+  };
+  $('bgmask').onchange=function(){save()};
+  $('bgmask-c').onclick=function(ev){
+    var o=ev.target.closest('[data-mc]');if(!o)return;
+    if(!state.bg||state.bg.t!=='img')return;
+    state.bg.maskColor=o.dataset.mc;
+    save();renderBgFx();applyBg();
+  };
+  $('bgmask-color-apply').onclick=function(){
+    if(!state.bg||state.bg.t!=='img'){toast('请先上传背景图');return}
+    state.bg.maskColor=$('bgmask-color').value;
+    save();renderBgFx();applyBg();
+    toast('已应用蒙版颜色');
+  };
+
   var FONTS=[['默认',''],['宋体','"Noto Serif SC","Songti SC","SimSun",serif','Noto Serif SC','noto-serif-sc'],['楷体','"LXGW WenKai","Kaiti SC","STKaiti","KaiTi",serif','LXGW WenKai','lxgw-wen-kai'],['手写','"Long Cang","Xingkai SC","STXingkai",cursive','Long Cang','long-cang'],
     ['黄油','"ZCOOL QingKe HuangYou","PingFang SC",sans-serif','ZCOOL QingKe HuangYou','zcool-qingke-huangyou'],
     ['快乐','"ZCOOL KuaiLe","PingFang SC",sans-serif','ZCOOL KuaiLe','zcool-kuaile'],
@@ -431,7 +650,7 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
         var M=1600,s=Math.min(1,M/Math.max(img.width,img.height));
         var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
         c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-        state.bg={t:'img',v:c.toDataURL('image/jpeg',.8)};
+        state.bg={t:'img',v:c.toDataURL('image/jpeg',.8),blur:0,mask:0,maskColor:'#000000'};
         save();applyBg();renderSheet();
       };
       img.src=r.result;
@@ -439,7 +658,178 @@ input,textarea,button{letter-spacing:inherit;font-style:inherit}
     r.readAsDataURL(f);e.target.value='';
   };
 
-  load();applyBg();applyTx();showFig();stats();
+  function N(){return state.name||'mj'}
+  function LF(){var l=state.lf||{};return{al:l.al||0,b:l.b||0,dc:l.dc||0,d:l.d==null?1:l.d,p:l.p||0,pc:l.pc||0,pt:l.pt||0,pcustom:l.pcustom||null,pimg:l.pimg||null,pblur:l.pblur||0,pmask:l.pmask||0,pmaskColor:l.pmaskColor||'#ffffff'}}
+  var ALS=[['左','left'],['居中','center'],['右','right']];
+  var BRS=[['无',''],['细线','1.5px solid #d9cfc0'],['虚线','2px dashed #d9c9b4'],['双线','4px double #cdbfa9']];
+  var DCS=[['无',''],['✉','✉'],['❀','❀ ❀ ❀'],['♡','♡ ♡ ♡'],['☆','☆ ☆ ☆']];
+  var PCS=[['white','白','#ffffff'],['cream','米黄','#fff7e8'],['pink','粉','#fdeff0'],['blue','蓝','#edf3fb'],['mint','薄荷','#eaf5ee'],['lav','薰衣草','#f1ecf8'],['kraft','牛皮纸','#efe2cc'],['gray','浅灰','#f1f0ee'],['night','夜','#2b2a33']];
+  var PTS=[['blank','空白'],['lines','横线'],['dots','点状'],['grid','方格']];
+  function applyName(){
+    var n='给 '+N()+' 的信';$('lt').textContent=n;CFG.letters.name=n;
+    CFG.letters.empty='还没有写给 '+N()+' 的信<br>点右上角「写信」开始';
+    document.title='给 '+N()+' 的日常';
+    if(cur==='letters')$('ptitle').textContent=n;
+  }
+  function updatePimgFx(){
+    var F=LF();
+    var pb=document.getElementById('ed-pbg'),pm=document.getElementById('ed-pmask');
+    if(pb)pb.style.filter='blur('+(F.pblur||0)+'px)';
+    if(pm)pm.style.background=hexToRgba(F.pmaskColor||'#ffffff',F.pmask||0);
+  }
+  function renderMenu(){
+    var F=LF();
+    function g(id,k,arr){$(id).innerHTML=arr.map(function(x,i){return '<button class="of'+(i===F[k]?' on':'')+'" data-k="'+k+'" data-i="'+i+'">'+x[0]+'</button>'}).join('')}
+    g('m-pt','pt',PTS);g('m-al','al',ALS);g('m-b','b',BRS);g('m-dc','dc',DCS);
+    var hasCustom = !!(F.pcustom || F.pimg);
+    $('m-pc').innerHTML=PCS.map(function(x,i){return '<button class="of dot'+(i===F.pc && !hasCustom?' on':'')+'" data-k="pc" data-i="'+i+'" aria-label="'+x[1]+'" title="'+x[1]+'" style="background:'+x[2]+'"></button>'}).join('');
+    $('m-t').innerHTML='<button class="of'+(F.d?' on':'')+'" data-k="d" data-i="'+(F.d?0:1)+'">显示日期</button><button class="of'+(F.p?' on':'')+'" data-k="p" data-i="'+(F.p?0:1)+'">附言 P.S.</button>';
+    $('mname').value=state.name||'';
+    $('mgt').value=state.gt==null?'亲爱的 {n}：':state.gt;
+    $('msp').value=defSP();
+    // 自定义颜色
+    if(F.pcustom)$('m-pcustom').value=F.pcustom;
+    // 背景图预览（优先显示待应用的 pendingPimg）
+    var prev=$('m-pimg-preview');
+    var showImg = pendingPimg || F.pimg;
+    if(showImg){
+      prev.style.backgroundImage='url("'+showImg+'")';
+      prev.classList.add('has');
+      prev.textContent= pendingPimg ? '（待应用）' : '';
+    }else{
+      prev.style.backgroundImage='';
+      prev.classList.remove('has');
+      prev.textContent='未设置背景图';
+    }
+    // 清晰度 / 蒙版 / 蒙版颜色
+    var fx=$('m-pimg-fx');
+    if(F.pimg){
+      fx.hidden=false;
+      var bl=F.pblur||0,mk=Math.round((F.pmask||0)*100);
+      $('m-pblur').value=bl;$('m-pblur-v').textContent=bl+'px';
+      $('m-pmask').value=mk;$('m-pmask-v').textContent=mk+'%';
+      var mc=F.pmaskColor||'#ffffff';
+      $('m-pmask-c').innerHTML=maskColorHTML(mc);
+      $('m-pmask-color').value=mc;
+    }else{
+      fx.hidden=true;
+    }
+  }
+  function redraw(){if(editing)renderEditor(false)}
+  $('pmenu').onclick=function(){renderMenu();$('msheet').classList.add('open')};
+  $('msheet').onclick=function(ev){
+    if(ev.target===$('msheet')){$('msheet').classList.remove('open');return}
+    var o=ev.target.closest('.of');if(!o)return;
+    // 排除蒙版颜色按钮（它们有 data-mc，不是 data-k）
+    if(o.dataset.mc)return;
+    snap();
+    var k=o.dataset.k,v=+o.dataset.i,f=LF();
+    f[k]=v;
+    // 选预设颜色时清除自定义
+    if(k==='pc'){f.pcustom=null;f.pimg=null;pendingPimg=null}
+    state.lf=f;
+    if(editing&&(k==='pc'||k==='pt'))editing.entry[k]=v;
+    save();renderMenu();redraw();
+  };
+  $('mname').oninput=function(){snap();state.name=this.value.trim();save();applyName();redraw()};
+  $('mgt').oninput=function(){snap();state.gt=this.value;save();redraw()};
+  $('msp').oninput=function(){snap();state.spd=this.value;save();redraw()};
+  $('mreset').onclick=function(){snap();state.lf=null;pendingPimg=null;save();renderMenu();redraw()};
+
+  // 自定义颜色
+  $('m-pcustom-apply').onclick=function(){
+    snap();
+    var f=LF();
+    f.pcustom=$('m-pcustom').value;
+    f.pimg=null;
+    pendingPimg=null;
+    state.lf=f;
+    save();renderMenu();redraw();
+    toast('已应用自定义颜色');
+  };
+  $('m-pcustom-clear').onclick=function(){
+    snap();
+    var f=LF();
+    f.pcustom=null;
+    state.lf=f;
+    save();renderMenu();redraw();
+  };
+
+  // 信纸背景图
+  $('m-pimg-up').onclick=function(){$('pimgfile').click()};
+  $('m-pimg-apply').onclick=function(){
+    if(!pendingPimg){
+      toast('请先上传一张图片');
+      return;
+    }
+    snap();
+    var f=LF();
+    f.pimg=pendingPimg;
+    f.pcustom=null;
+    state.lf=f;
+    pendingPimg=null;
+    save();renderMenu();redraw();
+    toast('已应用信纸背景图');
+  };
+  $('m-pimg-clear').onclick=function(){
+    snap();
+    var f=LF();
+    f.pimg=null;
+    state.lf=f;
+    pendingPimg=null;
+    save();renderMenu();redraw();
+    toast('已清除背景图');
+  };
+  $('pimgfile').onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var M=1200,s=Math.min(1,M/Math.max(img.width,img.height));
+        var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        var data=c.toDataURL('image/jpeg',.75);
+        pendingPimg=data;
+        // 只更新预览，不立刻写入 state
+        var prev=$('m-pimg-preview');
+        prev.style.backgroundImage='url("'+data+'")';
+        prev.classList.add('has');
+        prev.textContent='';
+        toast('已选中，请点击「应用背景图」');
+      };
+      img.src=r.result;
+    };
+    r.readAsDataURL(f);e.target.value='';
+  };
+
+  // 信纸背景图：实时调节
+  $('m-pblur').oninput=function(){
+    var f=LF();f.pblur=+this.value;state.lf=f;
+    $('m-pblur-v').textContent=this.value+'px';
+    updatePimgFx();
+  };
+  $('m-pblur').onchange=function(){save()};
+  $('m-pmask').oninput=function(){
+    var f=LF();f.pmask=+this.value/100;state.lf=f;
+    $('m-pmask-v').textContent=this.value+'%';
+    updatePimgFx();
+  };
+  $('m-pmask').onchange=function(){save()};
+  $('m-pmask-c').onclick=function(ev){
+    var o=ev.target.closest('[data-mc]');if(!o)return;
+    snap();
+    var f=LF();f.pmaskColor=o.dataset.mc;state.lf=f;
+    save();renderMenu();updatePimgFx();
+  };
+  $('m-pmask-color-apply').onclick=function(){
+    snap();
+    var f=LF();f.pmaskColor=$('m-pmask-color').value;state.lf=f;
+    save();renderMenu();updatePimgFx();
+    toast('已应用蒙版颜色');
+  };
+
+  load();applyBg();applyTx();applyName();showFig();stats();
 })();
 </script>
 </body>
